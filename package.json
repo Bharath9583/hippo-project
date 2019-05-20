@@ -1,0 +1,27 @@
+{
+  "name": "hippoproject",
+  "version": "1.0.0",
+  "description": "Template builder",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bharath9583/hippo-project.git"
+  },
+  "keywords": [
+    "template",
+    "builder",
+    "javascript"
+  ],
+  "author": "Bharath",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Bharath9583/hippo-project/issues"
+  },
+  "homepage": "https://github.com/Bharath9583/hippo-project#readme",
+  "devDependencies": {
+    "http-server": "^0.11.1"
+  }
+}

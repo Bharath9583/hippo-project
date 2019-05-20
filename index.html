@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="../css/line-awesome.css">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div id="canvas">
+        <div id="iframe-wrapper">
+            <div id="iframe-layer">
+                <div id='resizers'>
+                    <div id='top-left' class='resizer'></div>
+                    <div id='top-right' class='resizer'></div>
+                    <div id='bottom-left' class='resizer'></div>
+                    <div id='bottom-right' class='resizer'></div>
+                </div>
+                <div id="highlight-box">
+                    <div id="highlight-name"></div>
+                </div>              
+                <div id="select-box">
+
+                    <div id="wysiwyg-editor">
+                            <a id="bold-btn"  title="Bold"><i><strong>B</strong></i></a>
+                            <a id="italic-btn"  title="Italic"><i>I</i></a>
+                            <a id="underline-btn"  title="Underline"><u>u</u></a>
+                            <a id="strike-btn" title="Strikeout"><del>S</del></a>
+                    </div>
+
+                    <div id="select-actions">
+                        <a id="drag-btn" title="Drag element"><i class="la la-arrows"></i></a>
+                        <a id="delete-btn" title="Remove element"><i class="la la-trash"></i></a>
+                        <a id="expand-btn" title="Remove element"><i class="la la-expand"></i></a>
+                    </div>
+                </div>
+            </div>
+            <iframe src="../demo/Day/index.html" id="iframe1"></iframe>
+        </div>
+    </div>
+<script src="js/jquery.min.js"></script>
+<script src="js/jquery.hotkeys.js"></script>
+
+<!-- bootstrap-->
+<script src="js/popper.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+
+<!-- builder code-->
+<!-- <script src="libs/builder/builder.js"></script>	 -->
+
+<script>
+    $(document).ready(function() 
+    {
+        var target
+        var textTarget
+        var isDown
+        var resize,resizeType
+        $('#iframe1').ready(function() {
+            document.getElementById("iframe1").contentWindow.addEventListener('click', clickListener)
+
+            document.getElementById("iframe1").contentWindow.addEventListener('scroll', scrollListener);
+            document.getElementById("iframe1").contentWindow.addEventListener('resize', scrollListener);
+            document.getElementById("iframe1").contentWindow.addEventListener('dblclick', dbclickListener);
+            document.getElementById("iframe1").contentWindow.addEventListener('mouseup', mouseUpListener);
+
+            $("#bold-btn").on("click", function (e) {
+				document.getElementById("iframe1").contentWindow.document.execCommand('bold',false,null);
+				e.preventDefault();
+				return false;
+            });
+
+            $("#italic-btn").on("click", function (e) {
+                document.getElementById("iframe1").contentWindow.document.execCommand('italic',false,null);
+                e.preventDefault();
+                return false;
+            });
+
+            $("#underline-btn").on("click", function (e) {
+                document.getElementById("iframe1").contentWindow.document.execCommand('underline',false,null);
+                e.preventDefault();
+                return false;
+            });
+            
+            $("#strike-btn").on("click", function (e) {
+                document.getElementById("iframe1").contentWindow.document.execCommand('strikeThrough',false,null);
+                e.preventDefault();
+                return false;
+            });
+
+            $("#link-btn").on("click", function (e) {
+                document.getElementById("iframe1").contentWindow.document.execCommand('createLink',false,"#");
+                e.preventDefault();
+                return false;
+            });
+
+            $('#drag-btn').mousedown(handle_mousedown);
+            $('#expand-btn').mousedown(mouseResize);
+            $('#top-left').mousedown(topLeftResize);
+            $('#top-right').mousedown(topRightResize);
+            $('#bottom-left').mousedown(bottomLeftResize);
+            $('#bottom-right').mousedown(bottomRightResize);
+            $('#delete-btn').mouseup(onDelete);
+        })
+
+        function topLeftResize(e) {
+            offset = [
+                e.clientX,
+                e.clientY,
+                target.offsetWidth,
+                target.offsetHeight,
+                target.offsetLeft,
+                target.offsetTop
+            ];
+            resize = true;
+            resizeType = 'topLeftResize'
+            document.getElementById("iframe1").contentWindow.addEventListener('mousemove', divMove);
+            e.preventDefault()
+        }
+
+        function topRightResize(e) {
+            offset = [
+                e.clientX,
+                e.clientY,
+                target.offsetWidth,
+                target.offsetHeight,
+                target.offsetLeft,
+                target.offsetTop
+            ];
+            resize = true;
+            resizeType = 'topRightResize'
+            document.getElementById("iframe1").contentWindow.addEventListener('mousemove', divMove);
+            e.preventDefault()
+        }
+
+        function bottomLeftResize(e) {
+            offset = [
+                e.clientX,
+                e.clientY,
+                target.offsetWidth,
+                target.offsetHeight,
+                target.offsetLeft,
+                target.offsetTop
+            ];
+            resize = true;
+            resizeType = 'bottomLeftResize'
+            document.getElementById("iframe1").contentWindow.addEventListener('mousemove', divMove);
+            e.preventDefault()
+        }
+
+        function bottomRightResize(e) {
+            offset = [
+                e.clientX,
+                e.clientY,
+                target.offsetWidth,
+                target.offsetHeight,
+                target.offsetLeft,
+                target.offsetTop
+            ];
+            resize = true;
+            resizeType = 'bottomRightResize'
+            document.getElementById("iframe1").contentWindow.addEventListener('mousemove', divMove);
+            e.preventDefault()
+        }
+
+        function clickListener(event) {
+            $("#highlight-box").css({
+                "top": event.target.getBoundingClientRect().top , 
+                "left": event.target.getBoundingClientRect().left,
+                "width" : event.target.offsetWidth, 
+                "height": event.target.offsetHeight,
+                "display": "block"
+            });
+            $("#select-actions").css({
+                "top": event.target.getBoundingClientRect().top -18, 
+                "left": event.target.getBoundingClientRect().left,
+                "width" : 90,
+                "display": "block"
+            });
+            target = event.target            
+            if( target != textTarget) {
+                $("#wysiwyg-editor").css({
+                    "display": "none"
+                });
+                $(textTarget).attr({'contenteditable':false, 'spellcheckker':false});
+                textTarget = null
+            }
+        }
+        
+        function scrollListener(event) {
+            if(target) {
+                $("#highlight-box").css({
+                    "top": target.getBoundingClientRect().top , 
+                    "left": target.getBoundingClientRect().left,
+                    "width" : target.offsetWidth, 
+                    "height": target.offsetHeight,
+                    "display": "block"
+                });
+                $("#select-actions").css({
+                    "top": target.getBoundingClientRect().top -18, 
+                    "left": target.getBoundingClientRect().left,
+                    "width" : 90,
+                    "display": "block"
+                });
+            }
+            if(textTarget) {
+                $("#wysiwyg-editor").css({
+                    "top": target.getBoundingClientRect().top -18, 
+                    "left": target.getBoundingClientRect().left + event.target.offsetWidth - 110,
+                    "width" : 110,
+                    "display": "block"
+                });
+            }
+        }
+
+        function dbclickListener(event) {
+            $("#wysiwyg-editor").css({
+                "top": event.target.getBoundingClientRect().top -18, 
+                "left": event.target.getBoundingClientRect().left + event.target.offsetWidth - 110,
+                "width" : 110,
+                "display": "block"
+            });
+            $(event.target).attr({'contenteditable':true, 'spellcheckker':false});
+            textTarget = event.target
+        }
+
+        function handle_mousedown(e){
+            isDown = true
+            offset = [
+                target.offsetLeft - e.clientX,
+                target.offsetTop - e.clientY,
+                target.offsetWidth,
+                target.offsetHeight
+            ];
+            document.getElementById("iframe1").contentWindow.addEventListener('mousemove', divMove);
+            e.preventDefault()
+        }
+
+        function divMove(e) {
+            if (isDown) {
+
+                $("#select-actions").css({
+                    "display": "none"
+                });
+                $("#highlight-box").css({
+                    "display": "none"
+                });
+                mousePosition = {        
+                    x : e.clientX,
+                    y : e.clientY      
+                };
+                target.style.position = 'absolute'
+                target.style.left = (mousePosition.x + offset[0]) + 'px';
+                target.style.top  = (mousePosition.y + offset[1]) + 'px';
+                target.style.width = offset[2] + 'px';
+                target.style.height = offset[3] + 'px';
+            }
+
+            if(resize) {
+                $("#resizers").css({
+                    "display": "none"
+                });
+                switch(resizeType) {
+                    case 'topLeftResize':
+                        target.style.width = offset[2] + (offset[0]- e.clientX) + 'px'
+                        target.style.height = offset[3] + (offset[1] - e.clientY) + 'px'
+                        target.style.top = e.clientY + (offset[5] - offset[1]) + 'px'
+                        target.style.left = e.clientX + (offset[4] - offset[0]) + 'px'
+                        target.style.position = 'absolute'
+                        break
+                    case 'topRightResize':
+                        target.style.width = offset[2] + (e.clientX - offset[0]) + 'px'
+                        target.style.height = offset[3] + (offset[1] - e.clientY) + 'px'
+                        target.style.top = e.clientY + (offset[5] - offset[1]) + 'px'
+                        target.style.position = 'absolute'
+                        break
+                    case 'bottomRightResize':
+                        target.style.width = offset[2] + (e.clientX - offset[0]) + 'px'
+                        target.style.height = offset[3] + (e.clientY - offset[1]) + 'px'
+                        break
+                    case 'bottomLeftResize':
+                        target.style.width = offset[2] + (offset[0]- e.clientX) + 'px'
+                        target.style.height = offset[3] + (e.clientY - offset[1]) + 'px'
+                        target.style.left = e.clientX + (offset[4] - offset[0]) + 'px'
+                        target.style.position = 'absolute'
+                        break
+                }
+            }
+        }
+
+        function onDelete() {
+            $("#select-actions").css({
+                "display": "none"
+            });
+            $("#highlight-box").css({
+                "display": "none"
+            });
+            target.parentNode.removeChild(target)
+        }
+
+        function mouseResize(e) {
+            $('#resizers').css({
+                "top": target.getBoundingClientRect().top , 
+                "left": target.getBoundingClientRect().left,
+                "width" : target.offsetWidth, 
+                "height": target.offsetHeight,
+                "display": "block"
+            })
+            $("#select-actions").css({
+                "display": "none"
+            });
+            $("#highlight-box").css({
+                "display": "none"
+            });
+            document.getElementById("iframe1").contentWindow.addEventListener('mousemove', divMove);
+        }
+
+        function mouseUpListener() {
+            isDown = false
+            isResize = false
+            document.getElementById("iframe1").contentWindow.removeEventListener('mousemove', divMove);
+        }
+        
+    });
+
+
+</script>
+</body>
+</html>
